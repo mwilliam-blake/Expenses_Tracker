@@ -1,5 +1,8 @@
 import 'dart:async';
+import 'package:expense_app/UI/screens/expenses.dart';
+import 'package:expense_app/data/local/db/db_helper.dart';
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../../home.dart';
 
 void main() {
@@ -22,13 +25,30 @@ class splashScreen extends StatefulWidget {
   State<StatefulWidget> createState() => _splashstate();
 }
 
+Future<bool> check_sharedPreferences() async {
+  SharedPreferences sprefer = await SharedPreferences.getInstance();
+  if(sprefer.containsKey('user_id')) {
+    return true;
+  } else {
+    return false;
+  }
+}
+
 class _splashstate extends State<splashScreen> {
   @override
 
   void initState() {
     super.initState();
-    Timer(const Duration(seconds: 5),() {
-      Navigator.pushReplacement(context, MaterialPageRoute(builder: (context)=>MyHomePages()));
+    Timer(const Duration(seconds: 5),() async{
+      SharedPreferences sprefer = await SharedPreferences.getInstance();
+
+      if(sprefer.containsKey('user_id')) {
+        Navigator.pushReplacement(
+            context, MaterialPageRoute(builder: (context) => ExpensePage()));
+      } else {
+        Navigator.pushReplacement(
+            context, MaterialPageRoute(builder: (context) => MyHomePages()));
+      }
     });
   }
 

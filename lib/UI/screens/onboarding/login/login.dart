@@ -1,3 +1,4 @@
+import 'package:expense_app/data/local/db/db_helper.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
@@ -10,6 +11,7 @@ class loginpage extends StatelessWidget {
   Widget build(BuildContext context) {
     TextEditingController unameController = TextEditingController();
     TextEditingController pwordController = TextEditingController();
+    DBHelper dbHelper = DBHelper.getInstance();
 
     return Scaffold(
       body:
@@ -67,11 +69,11 @@ class loginpage extends StatelessWidget {
                                 })])
                           ),
                           SizedBox(height: 20,),
-                          Align(alignment:Alignment.centerLeft, child: Text("Username", style: TextStyle(fontSize: 17, color: Colors.grey,),textAlign: TextAlign.left,)),
+                          Align(alignment:Alignment.centerLeft, child: Text("User Email", style: TextStyle(fontSize: 17, color: Colors.grey,),textAlign: TextAlign.left,)),
                           TextField(
                             controller: unameController,
                             decoration: InputDecoration(
-                              hintText: "Enter your Username",
+                              hintText: "Enter your Email",
                               hintStyle: TextStyle(color: Colors.grey),
                               enabledBorder: OutlineInputBorder(
                                   borderRadius: BorderRadius.all(Radius.circular(11)),
@@ -130,13 +132,22 @@ class loginpage extends StatelessWidget {
                                   borderRadius: new BorderRadius.circular(11.0),
                                 ),
                               ),
-                              onPressed: () {
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (context) =>  ExpensePage(),
-                                  ),
-                                );
+                              onPressed: () async {
+                                 bool auth_login = await dbHelper.authenticate_login(email: unameController.text, password: pwordController.text);
+
+                                 if(auth_login) {
+                                   ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                                       content:
+                                       Text("User Logged-in successfully!!")));
+
+                                   Navigator.pushReplacement(context, MaterialPageRoute(builder: (context)=>ExpensePage()));
+                                 }
+                                 else {
+                                   ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                                       content:
+                                       Text("Invalid Email or Password.")));
+                                 }
+
                               },
                               child: Text("Log In", style: TextStyle(color: Colors.white, fontSize: 20),),),
                           ),

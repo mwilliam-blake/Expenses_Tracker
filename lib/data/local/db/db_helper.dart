@@ -1,5 +1,6 @@
 import 'package:path/path.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sqflite/sqflite.dart';
 import '../models/user_model.dart';
 import '../models/category_model.dart';
@@ -70,6 +71,34 @@ class DBHelper {
 
   }
 
+  // Insert User datas to Users table
+  Future<bool> store_user_details({required UserModel User }) async {
+    var db = await getDB();
+    int rowsEffected = await db.insert(DB_USER_TABLE, User.toMap());
+    return rowsEffected > 0;
+  }
+
+  // Check Email already exists in Users table
+  Future<bool> check_email_exists({required String email}) async {
+    var db = await getDB();
+    
+    List <Map <String, dynamic>> Data = await db.query(DB_USER_TABLE, where: " $TBL_USER_UEMAIL = ? ", whereArgs: [email]);
+
+    return Data.isNotEmpty;
+  }
+
+  // Authenticate user login
+  Future<bool> authenticate_login({required String email, required String password}) async {
+    var db = await getDB();
+
+    List<Map<String, dynamic>> Data = await db.query(DB_USER_TABLE, where: " $TBL_USER_UEMAIL = ? and $TBL_USER_PASSWRD = ?", whereArgs: [email,password]);
+
+    if(Data.isNotEmpty) {
+      var shareprefer = await SharedPreferences.getInstance();
+      shareprefer.setInt('user_id', Data[0][TBL_USER_UID]);
+    }
+    return Data.isNotEmpty;
+  }
 
 
 
