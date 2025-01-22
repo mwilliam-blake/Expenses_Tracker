@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'package:expense_app/UI/screens/expenses.dart';
-import 'package:expense_app/data/local/db/db_helper.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../home.dart';

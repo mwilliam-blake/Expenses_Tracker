@@ -1,3 +1,4 @@
+import 'package:expense_app/UI/screens/add_expenses.dart';
 import 'package:flutter/material.dart';
 
 class ExpensePage extends StatefulWidget {
@@ -284,6 +285,9 @@ class _ExpensePageState extends State<ExpensePage> {
           ),
         ),
       ),
+      floatingActionButton: FloatingActionButton(onPressed: (){
+        Navigator.push(context, MaterialPageRoute(builder: (context)=>AddExpensePage()));
+      }, child: Icon(Icons.add),),
     );
   }
 }
