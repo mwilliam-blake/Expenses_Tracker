@@ -19,6 +19,8 @@ class _AddExpensePageState extends State<AddExpensePage> {
 
   String selectedType = "Debit";
 
+  Widget botm_scfol = Center(child: Text("Choose a Category", style: TextStyle(fontSize: 16),));
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -147,9 +149,15 @@ class _AddExpensePageState extends State<AddExpensePage> {
                       padding: const EdgeInsets.all(8.0),
                       child: Column(
                         children: [
-                          Image.asset(AppConstant.mCat[index].cat_img, width: 50, height: 50,),
+                          InkWell(onTap: (){
+                            botm_scfol = selected_expense(img: AppConstant.mCat[index].cat_img, cat: AppConstant.mCat[index].cat_title);
+                            setState(() {
+
+                            });
+                            Navigator.pop(context);
+                          }, child: Image.asset(AppConstant.mCat[index].cat_img, width: 50, height: 50,)),
                           //Icon(Icons.account_circle_rounded, color: Colors.green, size: 50,),
-                          SizedBox(height: 20,),
+                          SizedBox(height: 10,),
                           Text(AppConstant.mCat[index].cat_title)
                         ],
                       ),
@@ -168,7 +176,7 @@ class _AddExpensePageState extends State<AddExpensePage> {
                     color: Colors.indigo,
                   ),
                 ),
-                child: Center(child: Text("Choose a Category", style: TextStyle(fontSize: 16),)),
+                child: botm_scfol,
               ),
             )
 
@@ -177,4 +185,17 @@ class _AddExpensePageState extends State<AddExpensePage> {
       ),
     );
   }
+}
+
+Widget selected_expense({required img, required cat}) {
+   return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        Image.asset(img),
+        SizedBox(width: 10,),
+        Text(cat,style: TextStyle(fontSize: 16)),
+      ],
+    );
+
+
 }
