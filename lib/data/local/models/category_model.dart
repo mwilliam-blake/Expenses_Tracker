@@ -23,6 +23,7 @@ class CategoryModel {
   ///2 from Model toMap
   Map<String, dynamic> toMap(){
     return {
+      DBHelper.TBL_CATEGORY_TITLE : cid,
       DBHelper.TBL_CATEGORY_TITLE : cat_title,
       DBHelper.TBL_CATEGORY_IMAGE : cat_img,
     };

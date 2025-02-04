@@ -100,6 +100,27 @@ class DBHelper {
     return Data.isNotEmpty;
   }
 
+  Future<bool> addExpense({required ExpensesModel expense}) async {
 
+    var db = await getDB();
+
+    int rowsEffected = await db.insert(DB_EXPENSES_TABLE, expense.toMap());
+
+    return rowsEffected>0;
+  }
+
+  Future<List<ExpensesModel>> fetchExpense() async{
+    var db = await getDB();
+
+    List<Map<String, dynamic>> mData = await db.query(DB_EXPENSES_TABLE, orderBy: "$TBL_EXPENSE_CREATED_AT DESC");
+
+    List<ExpensesModel> mExpenses = [];
+
+    for(Map<String, dynamic> eachExp in mData){
+      mExpenses.add(ExpensesModel.fromMap(eachExp));
+    }
+
+    return mExpenses;
+  }
 
 }

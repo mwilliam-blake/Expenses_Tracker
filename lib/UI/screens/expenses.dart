@@ -1,5 +1,12 @@
+import 'dart:math';
+
 import 'package:expense_app/UI/screens/add_expenses.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+
+import '../../data/local/models/expense_filter_model.dart';
+import '../../domain/app_constants.dart';
+import 'bloc/expense_bloc.dart';
 
 class ExpensePage extends StatefulWidget {
   @override
@@ -7,7 +14,8 @@ class ExpensePage extends StatefulWidget {
 }
 
 class _ExpensePageState extends State<ExpensePage> {
-  List<Map<String, dynamic>> expenses = [
+  List<ExpenseFilterModel> filteredExpenses = [];
+  /* List<Map<String, dynamic>> expenses = [
     {
       "date": "Tuesday, 14",
       "amount": -1380,
@@ -34,11 +42,15 @@ class _ExpensePageState extends State<ExpensePage> {
         "icon": Icons.emoji_transportation,
       }],
     },
-  ];
+  ]; */
 
+  @override
+  void initState() {
+    super.initState();
+    context.read<ExpenseBloc>().add(FetchFilteredExpense(type: 0));
+  }
 
-
-  String selectedFilter = "This month";
+  String selectedFilter = "Date wise";
 
   @override
   Widget build(BuildContext context) {
@@ -51,7 +63,7 @@ class _ExpensePageState extends State<ExpensePage> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               const SizedBox(height: 30),
-        
+
               // Header Row
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -76,7 +88,7 @@ class _ExpensePageState extends State<ExpensePage> {
                 ],
               ),
               const SizedBox(height: 20),
-        
+
               // Greeting and Filter Row
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -119,11 +131,23 @@ class _ExpensePageState extends State<ExpensePage> {
                       dropdownColor: Colors.greenAccent,
                       value: selectedFilter,
                       onChanged: (String? newValue) {
+                        int selectedType=0;
+                        if(newValue=="Date wise"){
+                          selectedType=0;
+                        } else if(newValue=="Month wise"){
+                          selectedType=1;
+                        } else if(newValue=="Category wise"){
+                          selectedType=3;
+                        } else {
+                          selectedType=2;
+                        }
+                        context.read<ExpenseBloc>().add(FetchFilteredExpense(type: selectedType));
+
                         setState(() {
                           selectedFilter = newValue!;
                         });
                       },
-                      items: <String>["This month", "Last month", "This week"]
+                      items: <String>["Date wise", "Month wise", "Year wise", "Category wise"]
                           .map<DropdownMenuItem<String>>((String value) {
                         return DropdownMenuItem<String>(
                           value: value,
@@ -135,7 +159,7 @@ class _ExpensePageState extends State<ExpensePage> {
                 ],
               ),
               const SizedBox(height: 30),
-        
+
               // Expense Total Card
               Container(
                 padding: const EdgeInsets.all(20),
@@ -189,97 +213,168 @@ class _ExpensePageState extends State<ExpensePage> {
                 ),
               ),
               const SizedBox(height: 30),
-        
+
               // Expense List Title
               Text(
                 "Expense List",
                 style: TextStyle(fontSize: 25, fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 20),
-        
+
               // Expense List
               Expanded(
-                child: ListView.builder(
-                  itemCount: expenses.length,
-                  itemBuilder: (_, index) {
-                    var expense = expenses[index];
-                    return Container(
-                        margin: const EdgeInsets.only(bottom: 15),
-                        padding: const EdgeInsets.all(15),
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(10),
-                          border: Border.all(color: Colors.grey),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.grey.shade200,
-                              blurRadius: 6,
-                              offset: Offset(0, 4),
-                            )
-                          ],
-                        ),
-                        child: Column(
-                          children: [
-                            Row(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                Text(expense["date"],
-                                    style: TextStyle(fontSize: 18,
-                                        fontWeight: FontWeight.w900,
-                                        color: Colors.black87)),
-                                Text("\$ ${expense["amount"]}", style: TextStyle(
-                                  fontSize: 18,
-                                  fontWeight: FontWeight.bold,
-                                  color: expense["amount"] < 0
-                                      ? Colors.black87
-                                      : Colors.black87,
-                                ),),
-                              ],
-                            ),
-                            SizedBox(height: 10,),
-                            Divider(),
-                            Container(
-                              child: ListView.builder(
-                                shrinkWrap: true,
-                                physics: NeverScrollableScrollPhysics(),
-                                itemCount: expenses[index]['sublist'].length,
-                                itemBuilder: (_, indx) {
-                                  dynamic subexp = expenses[index]['sublist'][indx];
-        
-                                  return
-                                      Row(
-                                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                        children: [
-                                          Row(
-                                      children: [
-                                      Container(
-                                      padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 5),
-                                      child: Icon(subexp['icon'], color: Colors.white,),
-                                      decoration: BoxDecoration(
-                                      color: Colors.deepPurpleAccent.shade100,
-                                      borderRadius: BorderRadius.circular(5),
-                                      ),
-                                      ),
-                                      SizedBox(width: 10,),
-                                      Column(
-                                      mainAxisAlignment: MainAxisAlignment.start,
-                                      crossAxisAlignment: CrossAxisAlignment.start,
-                                      children: [
-                                      Text(subexp['title'],style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
-                                      Text(subexp['desc'],style: TextStyle(fontSize: 12, color: Colors.grey)),
-                                      ],
-                                      ),
-                                      ],),
-                                          Text("\$ ${subexp["samount"]}",style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: expense["amount"] < 0 ? Colors.red.shade300 : Colors.green.shade300,)),
-                                        ],
+                child:
+                BlocBuilder<ExpenseBloc, ExpenseState>(
+                builder: (_, state) {
+                  if (state is ExpenseLoadingState) {
+                    return Center(
+                      child: CircularProgressIndicator(),
+                    );
+                  }
+
+                  if (state is ExpenseErrorState) {
+                    return Center(
+                      child: Text(state.errorMsg),
+                    );
+                  }
+
+                  if (state is ExpenseFilterLoadedState) {
+                    return state.mFilteredExpenses.isNotEmpty
+                        ?
+                    ListView.builder(
+                      itemCount: state.mFilteredExpenses.length,
+                      itemBuilder: (_, index) {
+                        return Container(
+                          margin: const EdgeInsets.only(bottom: 15),
+                          padding: const EdgeInsets.all(15),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(10),
+                            border: Border.all(color: Colors.grey),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.grey.shade200,
+                                blurRadius: 6,
+                                offset: Offset(0, 4),
+                              )
+                            ],
+                          ),
+                          child: Column(
+                            children: [
+                              Row(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                mainAxisAlignment: MainAxisAlignment
+                                    .spaceBetween,
+                                children: [
+                                  Text(state.mFilteredExpenses[index].filter_id==3?state.mFilteredExpenses[index].cat_title:state.mFilteredExpenses[index].type,
+                                      style: TextStyle(fontSize: 18,
+                                          fontWeight: FontWeight.w900,
+                                          color: Colors.black87)),
+                                  Text("\$ ${state.mFilteredExpenses[index]
+                                      .balance}", style: TextStyle(
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.bold,
+                                    color: state.mFilteredExpenses[index]
+                                        .balance < 0
+                                        ? Colors.black87
+                                        : Colors.black87,
+                                  ),),
+                                ],
+                              ),
+                              SizedBox(height: 10,),
+                              Divider(),
+                              Container(
+                                child: ListView.builder(
+                                  shrinkWrap: true,
+                                  physics: NeverScrollableScrollPhysics(),
+                                  itemCount: state.mFilteredExpenses[index]
+                                      .allExpenses.length,
+                                  itemBuilder: (_, indx) {
+                                    return
+                                      Padding(
+                                        padding: const EdgeInsets.symmetric(
+                                            vertical: 10),
+                                        child: Row(
+                                          mainAxisAlignment: MainAxisAlignment
+                                              .spaceBetween,
+                                          children: [
+                                            Row(
+                                              children: [
+                                                Container(
+                                                  padding: EdgeInsets.all(7),
+                                                  width: 50,
+                                                  height: 50,
+                                                  child: Image.asset(
+                                                      AppConstant.mCat.where((
+                                                          eachCat) {
+                                                        return eachCat.cid ==
+                                                            state
+                                                                .mFilteredExpenses[index]
+                                                                .allExpenses[indx]
+                                                                .cid;
+                                                      }).toList()[0].cat_img),
+                                                  decoration: BoxDecoration(
+                                                      borderRadius: BorderRadius
+                                                          .circular(11),
+                                                      color: Colors
+                                                          .primaries[Random()
+                                                          .nextInt(
+                                                          Colors.primaries
+                                                              .length - 1)]
+                                                          .shade100
+                                                  ),
+                                                ),
+                                                SizedBox(width: 10,),
+                                                Column(
+                                                  mainAxisAlignment: MainAxisAlignment
+                                                      .start,
+                                                  crossAxisAlignment: CrossAxisAlignment
+                                                      .start,
+                                                  children: [
+                                                    Text(state
+                                                        .mFilteredExpenses[index]
+                                                        .allExpenses[indx].title,
+                                                        style: TextStyle(
+                                                            fontSize: 16,
+                                                            fontWeight: FontWeight
+                                                                .w600)),
+                                                    Text(state
+                                                        .mFilteredExpenses[index]
+                                                        .allExpenses[indx].desc,
+                                                        style: TextStyle(
+                                                            fontSize: 12,
+                                                            color: Colors
+                                                                .grey)),
+                                                  ],
+                                                ),
+                                              ],),
+                                            Text("\$ ${state
+                                                .mFilteredExpenses[index]
+                                                .allExpenses[indx].amt}",
+                                                style: TextStyle(fontSize: 16,
+                                                  fontWeight: FontWeight.w600,
+                                                  color: state
+                                                      .mFilteredExpenses[index]
+                                                      .allExpenses[indx].amt! <
+                                                      0
+                                                      ? Colors.red.shade300
+                                                      : Colors.green
+                                                      .shade300,)),
+                                          ],
+                                        ),
                                       );
-                                },),),
-                          ],
-                        ),
-                      );
-                  },
-                ),
+                                  },),),
+                            ],
+                          ),
+                        );
+                      },
+                    ) : Center(
+                      child: Text('No Expenses yet!!'),
+                    );
+                  }
+                  return Container();
+                }
+              ),
               ),
             ],
           ),

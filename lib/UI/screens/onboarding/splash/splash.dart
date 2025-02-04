@@ -1,11 +1,17 @@
 import 'dart:async';
 import 'package:expense_app/UI/screens/expenses.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../../../../data/local/db/db_helper.dart';
+import '../../bloc/expense_bloc.dart';
 import '../../home.dart';
 
 void main() {
-  runApp(splash_screen());
+  runApp(BlocProvider(
+    create: (context) => ExpenseBloc(db: DBHelper.getInstance()),
+    child: splash_screen(),
+  ));
 }
 
 class splash_screen extends StatelessWidget {
