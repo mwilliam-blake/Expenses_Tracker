@@ -3,10 +3,10 @@ import 'dart:math';
 import 'package:expense_app/UI/screens/add_expenses.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-
 import '../../data/local/models/expense_filter_model.dart';
 import '../../domain/app_constants.dart';
 import 'bloc/expense_bloc.dart';
+import 'exp_statistics.dart';
 
 class ExpensePage extends StatefulWidget {
   @override
@@ -244,7 +244,16 @@ class _ExpensePageState extends State<ExpensePage> {
                     ListView.builder(
                       itemCount: state.mFilteredExpenses.length,
                       itemBuilder: (_, index) {
-                        return Container(
+                        return GestureDetector(
+                            onTap: () {
+                          // Navigate to StatisticPage
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                                builder: (context) => StatisticPages()),
+                          );
+                        },
+                        child: state.mFilteredExpenses[index].allExpenses.isNotEmpty ?  Container(
                           margin: const EdgeInsets.only(bottom: 15),
                           padding: const EdgeInsets.all(15),
                           decoration: BoxDecoration(
@@ -265,8 +274,8 @@ class _ExpensePageState extends State<ExpensePage> {
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 mainAxisAlignment: MainAxisAlignment
                                     .spaceBetween,
-                                children: [
-                                  Text(state.mFilteredExpenses[index].filter_id==3?state.mFilteredExpenses[index].cat_title:state.mFilteredExpenses[index].type,
+                                children: [ // state.mFilteredExpenses[index].filter_id==3?state.mFilteredExpenses[index].cat_title:
+                                  Text(state.mFilteredExpenses[index].type,
                                       style: TextStyle(fontSize: 18,
                                           fontWeight: FontWeight.w900,
                                           color: Colors.black87)),
@@ -366,7 +375,7 @@ class _ExpensePageState extends State<ExpensePage> {
                                   },),),
                             ],
                           ),
-                        );
+                        ):Container());
                       },
                     ) : Center(
                       child: Text('No Expenses yet!!'),

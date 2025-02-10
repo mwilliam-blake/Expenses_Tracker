@@ -6,6 +6,7 @@ import 'package:meta/meta.dart';
 import 'package:sqflite/sqflite.dart';
 
 import '../../../data/local/db/db_helper.dart';
+import '../../../data/local/models/category_model.dart';
 import '../../../domain/app_constants.dart';
 
 part 'expense_event.dart';
@@ -14,7 +15,7 @@ part 'expense_state.dart';
 class ExpenseBloc extends Bloc<ExpenseEvent, ExpenseState> {
   DBHelper db;
   DateFormat df = DateFormat.yMMMd();
-  int catid=0;
+  int cat_type=0;
 
   ExpenseBloc({required this.db}) : super(ExpenseInitialState()) {
 
@@ -27,7 +28,7 @@ class ExpenseBloc extends Bloc<ExpenseEvent, ExpenseState> {
         List<ExpensesModel> allExpenses = await db.fetchExpense();
         ///2
         //emit(ExpenseLoadedState(mExpenses: allExpenses));
-        emit(ExpenseFilterLoadedState(mFilteredExpenses: filterExp(allExpenses)));
+        emit(ExpenseFilterLoadedState(mFilteredExpenses: filterExp(allExpenses,0)));
       } else {
         ///3
         emit(ExpenseErrorState(errorMsg: "Expense not added"));
@@ -49,7 +50,7 @@ class ExpenseBloc extends Bloc<ExpenseEvent, ExpenseState> {
       emit(ExpenseLoadingState());
 
       List<ExpensesModel> allExpenses = await db.fetchExpense();
-      catid = event.type;
+      cat_type = event.type;
       print(event.type);
       if(event.type==0){
         df = DateFormat.yMMMd();
@@ -59,22 +60,22 @@ class ExpenseBloc extends Bloc<ExpenseEvent, ExpenseState> {
         df = DateFormat.y();
       }
 
-      emit(ExpenseFilterLoadedState(mFilteredExpenses: filterExp(allExpenses)));
+      emit(ExpenseFilterLoadedState(mFilteredExpenses: filterExp(allExpenses, event.type)));
 
     });
 
   }
 
-  List<ExpenseFilterModel> filterExp(List<ExpensesModel> allExpenses){
+  List<ExpenseFilterModel> filterExp(List<ExpensesModel> allExpenses, int type){
     ///filtering data
     List<ExpenseFilterModel> filteredExpenses = [];
-
+    if (type < 3) {
     List<String> uniqueDates = [];
     String eachDate = '';
     String filterd_cid = '';
 
     for(ExpensesModel eachExp in allExpenses){
-      if(catid==3) {
+      if(cat_type==3) {
             eachDate = eachExp.cid.toString();
       }
       else {
@@ -86,8 +87,6 @@ class ExpenseBloc extends Bloc<ExpenseEvent, ExpenseState> {
         }
       }
 
-    print(uniqueDates);
-
     for(String eachDate in uniqueDates){
       num eachMillis = 0;
       num balance = 0.0;
@@ -97,7 +96,7 @@ class ExpenseBloc extends Bloc<ExpenseEvent, ExpenseState> {
 
       for(ExpensesModel eachExp in allExpenses){
         eachMillis = int.parse(eachExp.created_at);
-        if(catid==3) {
+        if(cat_type==3) {
             eachExpDate = eachExp.cid.toString();
         } else {
             eachExpDate = df.format(DateTime.fromMillisecondsSinceEpoch(
@@ -121,9 +120,35 @@ class ExpenseBloc extends Bloc<ExpenseEvent, ExpenseState> {
 
       }
 
-      filteredExpenses.add(ExpenseFilterModel(millis: eachMillis, type: eachDate, balance: balance, allExpenses: eachDateExp, cat_title:ctitle, filter_id:catid));
+      ///filteredExpenses.add(ExpenseFilterModel(millis: eachMillis, type: eachDate, balance: balance, allExpenses: eachDateExp)); ///, cat_title:ctitle, filter_id:cat_type
+      filteredExpenses.add(ExpenseFilterModel(type: eachDate, balance: balance, allExpenses: eachDateExp));
 
+    }
+    } else {
+      ///cat wise
+      var uniqueCat = AppConstant.mCat;
 
+      for (CategoryModel eachCat in uniqueCat) {
+        num balance = 0.0;
+        List<ExpensesModel> eachCatExp = [];
+
+        for (ExpensesModel eachExp in allExpenses) {
+          if (eachCat.cid == eachExp.cid) {
+            eachCatExp.add(eachExp);
+
+            if (eachExp.exp_type == "Debit") {
+              balance -= eachExp.amt!;
+            } else {
+              balance += eachExp.amt!;
+            }
+          }
+        }
+
+        filteredExpenses.add(ExpenseFilterModel(
+            type: eachCat.cat_title,
+            balance: balance,
+            allExpenses: eachCatExp));
+      }
     }
 
     return filteredExpenses;
